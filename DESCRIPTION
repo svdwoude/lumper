@@ -1,0 +1,10 @@
+Package: lumper
+Title: Read and write Dockerfiles in R
+Version: 0.0.0.9000
+AuthorsAuthors@R: c(person("Vandewoude", "Sebastiaan", email = "sebastiaan.vandewoude@basf.com", role = c("aut","cre")),
+                    person("BASF SE", role = "cph"))
+Description: Package to assist parsing and editing Dockerfiles
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
