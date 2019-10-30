@@ -15,4 +15,5 @@ Imports:
     tibble,
     rlang,
     magrittr,
-    vctrs
+    vctrs,
+    purrr
