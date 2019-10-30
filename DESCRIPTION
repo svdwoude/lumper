@@ -16,4 +16,5 @@ Imports:
     rlang,
     magrittr,
     vctrs,
-    purrr
+    purrr,
+    tidyr
