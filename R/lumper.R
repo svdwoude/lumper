@@ -87,6 +87,7 @@ merge_dockerfiles <- function(x, y) {
     ) %>%
     select(-order, -order_n)
 
+  # merge args back in
   merged <- merge %>% left_join(x, by = c("name", "raw", "lineno_x" = "lineno")) %>%
     left_join(y, by = c("name", "raw", "lineno_y" = "lineno")) %>%
     mutate(args = map2(args.x, args.y, ~ .x %||% .y)) %>%
