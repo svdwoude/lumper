@@ -209,6 +209,7 @@ Dockerfile <- R6Class(
     },
     merge = function(Dockerfile) {
       self$commands <- merge_dockerfiles(self$commands, Dockerfile$commands)
+      invisible(self)
     },
     switch_cmd = function(a,b){
       self$Dockerfile <- switch_them(self$Dockerfile, a, b)
