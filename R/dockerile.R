@@ -202,6 +202,9 @@ Dockerfile <- R6Class(
     write = function(as = "Dockerfile"){
       return(self$string)
     },
+    merge = function(Dockerfile) {
+      self$commands <- merge_dockerfiles(self$commands, Dockerfile$commands)
+    },
     switch_cmd = function(a,b){
       self$Dockerfile <- switch_them(self$Dockerfile, a, b)
     },
@@ -217,7 +220,7 @@ Dockerfile <- R6Class(
       if(is_missing(value)) {
         return(private$..commands)
       } else {
-        private$..commands <- value
+        private$..commands <- value %>% select(lineno, name, args, raw)
       }
     },
     length = function() private$..length(),
@@ -266,19 +269,29 @@ merge_dockerfiles <- function(x, y) {
   }
 
   # full join dockeriles by command name and raw content
-  merge <- full_join(
-    x %>% select(-args),
-    y %>% select(-args),
-    by=c("name", "raw"),
-    suffix = c("_x", "_y")
-  ) %>%
+  commands <- full_join(
+      x %>% select(-args),
+      y %>% select(-args),
+      by=c("name", "raw"),
+      suffix = c("_x", "_y")
+    ) %>%
+    # remove unmatched FROM statements from y
+    filter(!(is.na(lineno_x) & name == "FROM")) %>%
+    # create columns to indicate if command was present in x or y
+    mutate(
+      x = !is.na(lineno_x),
+      y = !is.na(lineno_y),
+    )
+
+
+  commands_ordered <- commands %>%
     # keep sorting of y to make sure we can keep their order when pushed to x
     arrange(lineno_y, lineno_x) %>%
     # get initial order of x
     mutate(order = lineno_x) %>%
     # give missing y commands same order as subsequent x line
     fill(order) %>%
-    # NA order can only happen when it is the inital value, therefore take the following order -1
+    # NA order can only happen when it is the inital value, therefore take the leading order -1
     mutate(order = ifelse(is.na(order), lead(order) - 1, order)) %>%
     # switch to order x now that y is fitted in
     arrange(lineno_x, lineno_y) %>%
@@ -287,23 +300,30 @@ merge_dockerfiles <- function(x, y) {
     mutate(order_n = 1:n()) %>%
     ungroup() %>%
     arrange(order, order_n) %>%
-    # create column with final natural order
-    mutate(lineno = 1:n()) %>%
-    # create columns to indicate if command was present in x or y
-    mutate(
-      x = !is.na(lineno_x),
-      y = !is.na(lineno_y),
-    ) %>%
     select(-order, -order_n)
 
+    # compute new lineno
+   commands_numbered <- commands_ordered %>%
+    mutate(order_x = lineno_x, order_y = lineno_y) %>%
+    fill(order_x, order_y) %>%
+    mutate(
+      newlines_x = order_x - lag(order_x, default = min(order_x)),
+      newlines_y = order_y - lag(order_y, default = min(order_y)),
+      newlines = pmax(newlines_x, newlines_y, na.rm = TRUE),
+      lineno = cumsum(newlines) + 1
+    ) %>%
+    select(-newlines_x, -newlines_y, -order_x, order_y) %>%
+    select(lineno, name, raw, newlines, everything())
+
   # merge args back in
-  merged <- merge %>% left_join(x, by = c("name", "raw", "lineno_x" = "lineno")) %>%
+  commands_merged <- commands_numbered %>%
+    left_join(x, by = c("name", "raw", "lineno_x" = "lineno")) %>%
     left_join(y, by = c("name", "raw", "lineno_y" = "lineno")) %>%
     mutate(args = map2(args.x, args.y, ~ .x %||% .y)) %>%
     select(-args.x, -args.y) %>%
-    select(lineno, name, args, raw, everything())
+    select(lineno, name, args, raw)
 
-  return(merged)
+  return(commands_merged)
 }
 
 
