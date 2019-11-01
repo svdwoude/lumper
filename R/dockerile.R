@@ -92,19 +92,24 @@ Dockerfile <- R6Class(
   public = list(
 
     ## Either from a file, or from a character vector
-    initialize = function(content, file, FROM = "rocker/r-base", AS){
-      if (!is_missing(file)) {
-        raw <- readChar(file)
-      } else if(!is_missing(content)) {
-        raw <- content
+    initialize = function(content, file, commands, FROM = "rocker/r-base", AS){
+      if(!is_missing(commands)){
+        self$commands <- commands
+
       } else {
-        if (is_missing(AS)) {
-          raw <- glue("FROM {FROM}")
+        if (!is_missing(file)) {
+          raw <- readChar(file)
+        } else if(!is_missing(content)) {
+          raw <- content
         } else {
-          raw <- glue("FROM {FROM} AS {AS}")
+          if (is_missing(AS)) {
+            raw <- glue("FROM {FROM}")
+          } else {
+            raw <- glue("FROM {FROM} AS {AS}")
+          }
         }
+        self$commands <- parse_dockerfile(raw)
       }
-      self$commands <- parse_dockerfile(raw)
       invisible(self)
     },
     print = function() {
