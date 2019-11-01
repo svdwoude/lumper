@@ -18,4 +18,6 @@ Imports:
     magrittr,
     vctrs,
     purrr,
-    tidyr
+    tidyr,
+    glue,
+    assertthat
