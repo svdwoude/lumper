@@ -43,10 +43,14 @@
 Dockerfile <- R6Class(
   "Dockerfile",
   private = list(
+    ..INSTRUCTIONS = c("ADD", "ARG", "CMD", "COPY", "ENTRYPOINT", "ENV", "EXPOSE", "FROM", "LABEL", "MAINTAINER", "ONBUILD", "RUN", "STOPSIGNAL", "USER", "VOLUME", "WORKDIR"),
+    ..CMD_REGEX = function() {
+      instr <- c(private$..INSTRUCTIONS, "#") %>% glue_collapse(sep = "|")
+      regex <- glue("(?:({instr}) +)?(.+)")
+      return(regex)
+    },
     ..commands = tibble(lineno = integer(0), name = character(0), args = list(), raw = character(0)),
-
     ..length = function() nrow(private$..commands),
-
     ..string = function() {
       self$commands %>%
         mutate(
@@ -58,7 +62,6 @@ Dockerfile <- R6Class(
         glue_collapse() %>%
         as.character()
     },
-
     ..append_cmd = function(instr, cmd) {
 
       # max lineno
@@ -80,13 +83,28 @@ Dockerfile <- R6Class(
 
       self$commands <- bind_rows(private$..commands, cmd_new)
     },
-
     ..prepend_cmd = function(instr, cmd) {
 
       cmd_new <- parse_dockerfile(glue("{toupper(instr)} {cmd}")) %>%
         mutate(lineno = 1)
 
       self$commands <- bind_rows(cmd_new, private$..commands %>% mutate(lineno = lineno + 1))
+    },
+    ..remove_line = function(line) {
+      self$commands <- private$..commands %>%
+        filter(lineno != line)
+    },
+    ..remove_cmd = function(cmd) {
+      self$commands <- private$..commands %>%
+        filter(raw != cmd)
+    },
+    ..remove_instr = function(instr) {
+      if(instr == "#") {
+        instr <- "COMMENT"
+      }
+
+      self$commands <- private$..commands %>%
+        filter(name != toupper(instr))
     }
   ),
   public = list(
@@ -214,8 +232,17 @@ Dockerfile <- R6Class(
     switch_cmd = function(a,b){
       self$Dockerfile <- switch_them(self$Dockerfile, a, b)
     },
-    remove_cmd = function(where){
-      self$Dockerfile <- remove_from(self$Dockerfile, where)
+    remove_cmd = function(cmd, lineno){
+      if(!is_missing(lineno)) {
+        private$..remove_line(lineno)
+      } else {
+        private$..remove_cmd(cmd)
+      }
+      invisible(self)
+    },
+    remove_instr = function(instr){
+      private$..remove_instr(instr)
+      invisible(self)
     },
     add_after = function(cmd, after){
       self$Dockerfile <- add_to(self$Dockerfile, cmd, after)
