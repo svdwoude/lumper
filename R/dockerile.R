@@ -229,9 +229,6 @@ Dockerfile <- R6Class(
       self$commands <- merge_dockerfiles(self$commands, Dockerfile$commands)
       invisible(self)
     },
-    switch_cmd = function(a,b){
-      self$Dockerfile <- switch_them(self$Dockerfile, a, b)
-    },
     remove_cmd = function(cmd, lineno){
       if(!is_missing(lineno)) {
         private$..remove_line(lineno)
@@ -243,9 +240,6 @@ Dockerfile <- R6Class(
     remove_instr = function(instr){
       private$..remove_instr(instr)
       invisible(self)
-    },
-    add_after = function(cmd, after){
-      self$Dockerfile <- add_to(self$Dockerfile, cmd, after)
     }
   ),
   active = list(
