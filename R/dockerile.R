@@ -31,7 +31,7 @@
 #'
 #' @importFrom R6 R6Class
 #' @importFrom tibble tibble
-#' @importFrom dplyr bind_rows pull filter lead
+#' @importFrom dplyr bind_rows pull filter lead mutate
 #' @importFrom glue glue glue_collapse
 #' @importFrom rlang is_missing
 #' @importFrom assertthat assert_that
@@ -92,11 +92,15 @@ Dockerfile <- R6Class(
     },
     ..remove_line = function(line) {
       self$commands <- private$..commands %>%
-        filter(lineno != line)
+        mutate(newlines = lineno - lag(lineno, default = min(lineno))) %>%
+        filter(lineno != line) %>%
+        mutate(lineno = cumsum(newlines) + 1)
     },
     ..remove_cmd = function(cmd) {
       self$commands <- private$..commands %>%
-        filter(raw != cmd)
+        mutate(newlines = lineno - lag(lineno, default = min(lineno))) %>%
+        filter(raw != cmd) %>%
+        mutate(lineno = cumsum(newlines) + 1)
     },
     ..remove_instr = function(instr) {
       if(instr == "#") {
@@ -104,12 +108,12 @@ Dockerfile <- R6Class(
       }
 
       self$commands <- private$..commands %>%
-        filter(name != toupper(instr))
+        mutate(newlines = lineno - lag(lineno, default = min(lineno))) %>%
+        filter(name != toupper(instr)) %>%
+        mutate(lineno = cumsum(newlines) + 1)
     }
   ),
   public = list(
-
-    ## Either from a file, or from a character vector
     initialize = function(content, file, commands, FROM = "rocker/r-base", AS){
       if(!is_missing(commands)){
         self$commands <- commands
