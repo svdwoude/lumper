@@ -34,6 +34,7 @@
 #' @importFrom dplyr bind_rows pull filter lead mutate
 #' @importFrom glue glue glue_collapse
 #' @importFrom rlang is_missing
+#' @importFrom purrr map
 #' @importFrom assertthat assert_that
 #' @export
 #'
@@ -93,26 +94,41 @@ Dockerfile <- R6Class(
       self$commands <- bind_rows(cmd_new, private$..commands %>% mutate(lineno = lineno + 1))
     },
     ..remove_line = function(line) {
-      self$commands <- private$..commands %>%
-        mutate(newlines = lineno - lag(lineno, default = min(lineno))) %>%
+
+      cmds <- private$..commands %>%
+        rownames_to_column() %>%
+        mutate(newlines = lineno - lag(lineno, default = min(lineno)))
+
+      cmd_remove <- cmds %>%
+        filter(lineno == line)
+
+      cmd_newlines <- cmd_remove %>% pull(newlines)
+      cmd_row <- cmd_remove %>% pull(rowname) %>% as.integer()
+
+      # replace newlines n+1 with nth newlines value
+      self$commands <- cmds %>%
         filter(lineno != line) %>%
+        mutate(newlines = ifelse(rowname == (cmd_row + 1), cmd_newlines + 1, newlines)) %>%
         mutate(lineno = cumsum(newlines) + 1)
     },
     ..remove_cmd = function(cmd) {
-      self$commands <- private$..commands %>%
-        mutate(newlines = lineno - lag(lineno, default = min(lineno))) %>%
-        filter(raw != cmd) %>%
-        mutate(lineno = cumsum(newlines) + 1)
+
+      lineno <- private$..commands %>%
+        filter(raw == cmd) %>%
+        pull(lineno)
+
+      private$..remove_line(lineno)
     },
     ..remove_instr = function(instr) {
       if(instr == "#") {
         instr <- "COMMENT"
       }
 
-      self$commands <- private$..commands %>%
-        mutate(newlines = lineno - lag(lineno, default = min(lineno))) %>%
-        filter(name != toupper(instr)) %>%
-        mutate(lineno = cumsum(newlines) + 1)
+     cmds <- private$..commands %>%
+        filter(name == toupper(instr)) %>%
+        pull(raw)
+
+     cmds %>% map(private$..remove_cmd)
     }
   ),
   public = list(
