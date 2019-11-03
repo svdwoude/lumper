@@ -322,7 +322,7 @@ function parseLine(line, lineno, options) {
     if (line.match(lineContinuationRegex)) {
         // Line continues on next line.
         var remainder = line.replace(lineContinuationRegex, '', 'g');
-        return { command: null, remainder: remainder };
+        return { command: null, remainder: remainder, lineno: lineno };
     }
 
     command = splitCommand(line);
@@ -371,16 +371,19 @@ function parse(contents, options) {
     var lineno;
     var lines = contents.split(/[\r?\n]/);
     var lookingForDirectives = true;
+    // var newlines = 0;
     var parseOptions = {};
     var parseResult;
+    var prevLineno;
     var regexMatch;
     var remainder = '';
     var includeComments = options && options['includeComments'];
 
     for (i = 0; i < lines.length; i++) {
-        lineno = i + 1;
+        lineno = i + 1 //- newlines;
         if (remainder) {
             line = remainder + lines[i];
+            lineno = prevLineno;
         } else {
             line = lines[i];
         }
@@ -413,8 +416,11 @@ function parse(contents, options) {
             if (parseResult.command.name !== 'COMMENT' || includeComments) {
                 commands.push(parseResult.command);
             }
-        }
+        } //else if(parseResult.lineno) {
+        //     newlines++;
+        // }
         remainder = parseResult.remainder;
+        prevLineno = parseResult.lineno;
     }
 
     return commands;
