@@ -54,8 +54,10 @@ Dockerfile <- R6Class(
     ..string = function() {
       self$commands %>%
         mutate(
-          newlines = lead(lineno, default = max(lineno) + 1) - lineno,
-          newlines = map_chr(newlines,  ~ rep("\n", .x) %>% glue_collapse()),
+          inline_newlines = str_count(raw, "#?(?: {3,}|\\t)"),
+          raw = str_replace_all(raw, "(#?(?: {3,}|\\t))", " \\\\\n\\1"),
+          newlines = lead(lineno, default = max(lineno) + 1) - lineno - inline_newlines,
+          newlines = map_chr(newlines,  ~ rep("\n", max(.x, 1)) %>% glue_collapse()),
           raw = glue("{raw}{newlines}")
         ) %>%
         pull(raw) %>%
