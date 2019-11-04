@@ -31,7 +31,7 @@
 #'
 #' @importFrom R6 R6Class
 #' @importFrom tibble tibble
-#' @importFrom dplyr bind_rows pull filter lead mutate
+#' @importFrom dplyr bind_rows pull filter lead mutate n
 #' @importFrom glue glue glue_collapse
 #' @importFrom rlang is_missing
 #' @importFrom purrr map
@@ -55,8 +55,8 @@ Dockerfile <- R6Class(
     ..string = function() {
       self$commands %>%
         mutate(
-          inline_newlines = str_count(raw, "#?(?: {3,}|\\t)"),
-          raw = str_replace_all(raw, "(#?(?: {3,}|\\t))", " \\\\\n\\1"),
+          inline_newlines = str_count(raw, "[^# \\n]+#*(?: {3,}|\\t)[\\w# ]"),
+          raw = str_replace_all(raw, "([^# \\n]+)(#*(?: {3,}|\\t)[\\w# ])", "\\1 \\\\\n\\2"),
           newlines = lead(lineno, default = max(lineno) + 1) - lineno - inline_newlines,
           newlines = map_chr(newlines,  ~ rep("\n", max(.x, 1)) %>% glue_collapse()),
           raw = glue("{raw}{newlines}")
