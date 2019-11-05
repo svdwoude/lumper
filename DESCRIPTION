@@ -20,4 +20,5 @@ Imports:
     purrr,
     tidyr,
     glue,
-    assertthat
+    assertthat,
+    stringr
