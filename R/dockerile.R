@@ -331,12 +331,24 @@ merge_dockerfiles <- function(x, y) {
     mutate(
       x = !is.na(lineno_x),
       y = !is.na(lineno_y),
-    )
+    ) %>%
+    rownames_to_column()
 
+  prefix_limit <- commands %>%
+    filter(name == "FROM") %>%
+    pull(rowname) %>%
+    as.integer()
+
+  prefix <- commands %>%
+    filter(rowname <= prefix_limit) %>%
+    select(-rowname)
 
   commands_ordered <- commands %>%
+    filter(rowname > prefix_limit) %>%
+    select(-rowname) %>%
     # keep sorting of y to make sure we can keep their order when pushed to x
     arrange(lineno_y, lineno_x) %>%
+    bind_rows(prefix, .) %>%
     # get initial order of x
     mutate(order = lineno_x) %>%
     # give missing y commands same order as subsequent x line
