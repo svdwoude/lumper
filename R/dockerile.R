@@ -30,7 +30,7 @@
 #' }
 #'
 #' @importFrom R6 R6Class
-#' @importFrom tibble tibble
+#' @importFrom tibble tibble rownames_to_column
 #' @importFrom dplyr bind_rows pull filter lead mutate n
 #' @importFrom glue glue glue_collapse
 #' @importFrom rlang is_missing
@@ -304,8 +304,9 @@ parse_dockerfile <- function(Dockerfile) {
 #' merge Dockerfile
 #' @param x string; content Dockerfile x
 #' @param y string; content Dockerfile y
-#' @importFrom dplyr full_join mutate arrange group_by ungroup select left_join everything
+#' @importFrom dplyr full_join mutate arrange group_by ungroup select left_join everything  pull
 #' @importFrom purrr map2
+#' @importFrom tibble rownames_to_column
 #' @importFrom tidyr fill
 #' @export
 merge_dockerfiles <- function(x, y) {
