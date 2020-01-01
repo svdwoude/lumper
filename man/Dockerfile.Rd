@@ -263,7 +263,7 @@ my_dock <- Dockerfile$new()
 \if{html}{\out{<a id="method-merge"></a>}}
 \subsection{Method \code{merge()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Dockerfile$merge(Dockerfile)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Dockerfile$merge(Dockerfile, remove_duplicated_comments = TRUE)}\if{html}{\out{</div>}}
 }
 
 }

@@ -31,11 +31,12 @@
 #'
 #' @importFrom R6 R6Class
 #' @importFrom tibble tibble rownames_to_column
-#' @importFrom dplyr bind_rows pull filter lead mutate n
+#' @importFrom dplyr bind_rows pull filter lead mutate n lag lead
 #' @importFrom glue glue glue_collapse
 #' @importFrom rlang is_missing
 #' @importFrom stringr str_count str_replace_all
 #' @importFrom purrr map
+#' @importFrom stringdist stringdist
 #' @importFrom assertthat assert_that
 #' @export
 #'
@@ -248,8 +249,20 @@ Dockerfile <- R6Class(
     write = function(as = "Dockerfile"){
       return(self$string)
     },
-    merge = function(Dockerfile) {
+    merge = function(Dockerfile, remove_duplicated_comments = TRUE) {
       self$commands <- merge_dockerfiles(self$commands, Dockerfile$commands)
+
+      if(remove_duplicated_comments) {
+        self$commands %>%
+          mutate(
+            dist_lag = stringdist(raw, lag(raw)),
+            dist_lead = stringdist(raw, lead(raw))
+          ) %>%
+          filter(name == "COMMENT", (dist_lead <= 2 | dist_lag <= 2)) %>%
+          pull(lineno) %>%
+          map(private$..remove_line)
+      }
+
       invisible(self)
     },
     remove_cmd = function(cmd, lineno){
