@@ -34,7 +34,7 @@
 #' @importFrom dplyr bind_rows pull filter lead mutate n
 #' @importFrom glue glue glue_collapse
 #' @importFrom rlang is_missing
-#' @importFrom stringr str_count
+#' @importFrom stringr str_count str_replace_all
 #' @importFrom purrr map
 #' @importFrom assertthat assert_that
 #' @export

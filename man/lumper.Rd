@@ -3,7 +3,6 @@
 \docType{package}
 \name{lumper}
 \alias{lumper}
-\alias{lumper-package}
 \title{\code{lumper} package}
 \description{
 Read and write Dockerfiles in R
