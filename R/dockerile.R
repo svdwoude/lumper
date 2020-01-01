@@ -56,8 +56,8 @@ Dockerfile <- R6Class(
     ..string = function() {
       self$commands %>%
         mutate(
-          inline_newlines = str_count(raw, "[^# \\n]+#*(?: {3,}|\\t)[\\w# ]"),
-          raw = str_replace_all(raw, "([^# \\n]+)(#*(?: {3,}|\\t)[\\w# ])", "\\1 \\\\\n\\2"),
+          inline_newlines = str_count(raw, "[^# \\n]+#* {0,1}(?: {2,}|\\t)[\\w# ]"),
+          raw = str_replace_all(raw, "([^# \\n]+)(#* {0,1}((?: {2,}|\\t)[\\w# ]))", "\\1 \\\\\n\\3"),
           newlines = lead(lineno, default = max(lineno) + 1) - lineno - inline_newlines,
           newlines = map_chr(newlines,  ~ rep("\n", max(.x, 1)) %>% glue_collapse()),
           raw = glue("{raw}{newlines}")
