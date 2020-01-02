@@ -100,17 +100,21 @@ Dockerfile <- R6Class(
       cmds <- private$..commands %>%
         rownames_to_column() %>%
         mutate(newlines = lineno - lag(lineno, default = min(lineno)))
+      for(l in line) {
+        cmd_remove <- cmds %>%
+          filter(lineno == l)
 
-      cmd_remove <- cmds %>%
-        filter(lineno == line)
+        cmd_newlines <- cmd_remove %>% pull(newlines)
+        cmd_row <- cmd_remove %>% pull(rowname) %>% as.integer()
 
-      cmd_newlines <- cmd_remove %>% pull(newlines)
-      cmd_row <- cmd_remove %>% pull(rowname) %>% as.integer()
+        # replace newlines n+1 with nth newlines value
+        cmds <- cmds %>%
+          filter(lineno != l) %>%
+          mutate(newlines = ifelse(rowname == (cmd_row + 1), cmd_newlines, newlines))
+      }
 
-      # replace newlines n+1 with nth newlines value
+      # compute new lineno
       self$commands <- cmds %>%
-        filter(lineno != line) %>%
-        mutate(newlines = ifelse(rowname == (cmd_row + 1), cmd_newlines, newlines)) %>%
         mutate(lineno = cumsum(newlines) + 1)
     },
     ..remove_cmd = function(cmd) {
@@ -259,8 +263,8 @@ Dockerfile <- R6Class(
             dist_lead = stringdist(raw, lead(raw))
           ) %>%
           filter(name == "COMMENT", (dist_lead <= 2 | dist_lag <= 2)) %>%
-          pull(lineno) %>%
-          map(private$..remove_line)
+          pull(raw) %>%
+          map(private$..remove_cmd)
       }
 
       invisible(self)
