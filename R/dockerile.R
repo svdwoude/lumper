@@ -110,7 +110,7 @@ Dockerfile <- R6Class(
       # replace newlines n+1 with nth newlines value
       self$commands <- cmds %>%
         filter(lineno != line) %>%
-        mutate(newlines = ifelse(rowname == (cmd_row + 1), cmd_newlines + 1, newlines)) %>%
+        mutate(newlines = ifelse(rowname == (cmd_row + 1), cmd_newlines, newlines)) %>%
         mutate(lineno = cumsum(newlines) + 1)
     },
     ..remove_cmd = function(cmd) {
